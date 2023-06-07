@@ -1,0 +1,61 @@
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class JSONComparatorTest {
+
+    @Test
+    public void testJsonEquality() throws JsonProcessingException {
+        // Create the first JSON object
+        String json1 = "{ \"name\": \"John\", \"age\": 25, \"address\": { \"city\": \"New York\", \"state\": \"NY\" } }";
+
+        // Create the second JSON object
+        String json2 = "{ \"name\": \"John\", \"age\": 30, \"address\": { \"city\": \"New York\", \"state\": \"CA\" } }";
+
+        // Assert the equality of the two JSON objects and print the differences
+        assertJsonEquality(json1, json2);
+    }
+
+    private void assertJsonEquality(String json1, String json2) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode node1 = mapper.readTree(json1);
+        JsonNode node2 = mapper.readTree(json2);
+
+        compareJsonNodes(node1, node2);
+    }
+
+    private void compareJsonNodes(JsonNode node1, JsonNode node2) {
+        if (node1.equals(node2)) {
+            return; // JSON nodes are equal
+        }
+
+        if (node1.isObject() && node2.isObject()) {
+            ObjectNode objectNode1 = (ObjectNode) node1;
+            ObjectNode objectNode2 = (ObjectNode) node2;
+
+            objectNode1.fieldNames().forEachRemaining(fieldName -> {
+                JsonNode fieldNode1 = objectNode1.get(fieldName);
+                JsonNode fieldNode2 = objectNode2.get(fieldName);
+
+                compareJsonNodes(fieldNode1, fieldNode2);
+            });
+        } else {
+            System.out.println("Difference: " + node1 + " vs " + node2);
+        }
+    }
+}
+
+
+
+
+
+In this example, we're using the Jackson library to parse and compare the JSON objects. The assertJsonEquality() method takes two JSON strings, reads them into JsonNode objects using the ObjectMapper, and then calls compareJsonNodes() to recursively compare the nodes.
+
+The compareJsonNodes() method checks if the nodes are equal. If they are not, it further checks if both nodes are objects. If they are, it iterates over the field names and recursively compares the corresponding field nodes. If the nodes are not objects, it prints the difference.
+
+Running the test will compare the JSON objects field by field and print the differences found in the console output.
+
+Make sure to include the necessary Jackson dependencies in your project's build file or dependency management tool.
