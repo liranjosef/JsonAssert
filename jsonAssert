@@ -1,22 +1,36 @@
+package petStore.testsBase;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.jupiter.api.Test;
+import org.apache.tools.ant.util.FileUtils;
+import org.testng.annotations.Test;
+import org.testng.asserts.SoftAssert;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JSONComparatorTest {
 
-    @Test
-    public void testJsonEquality() throws JsonProcessingException {
-        // Create the first JSON object
-        String json1 = "{ \"name\": \"John\", \"age\": 25, \"address\": { \"city\": \"New York\", \"state\": \"NY\" } }";
+    SoftAssert softAssert = new SoftAssert();
 
+    @Test
+    public void testJsonEquality() throws IOException {
+        // Create the first JSON object
+        String json1 = new String(Files.readAllBytes(Paths.get("src/test/java/petStore/testsBase/json1.json")));
+        String json2 = new String(Files.readAllBytes(Paths.get("src/test/java/petStore/testsBase/json2.json")));
         // Create the second JSON object
-        String json2 = "{ \"name\": \"John\", \"age\": 30, \"address\": { \"city\": \"New York\", \"state\": \"CA\" } }";
 
         // Assert the equality of the two JSON objects and print the differences
         assertJsonEquality(json1, json2);
+        softAssert.assertAll();
     }
 
     private void assertJsonEquality(String json1, String json2) throws JsonProcessingException {
@@ -24,10 +38,10 @@ public class JSONComparatorTest {
         JsonNode node1 = mapper.readTree(json1);
         JsonNode node2 = mapper.readTree(json2);
 
-        compareJsonNodes(node1, node2);
+        compareJsonNodes(node1, node2, "");
     }
 
-    private void compareJsonNodes(JsonNode node1, JsonNode node2) {
+    private void compareJsonNodes(JsonNode node1, JsonNode node2, String currentPath) {
         if (node1.equals(node2)) {
             return; // JSON nodes are equal
         }
@@ -40,22 +54,44 @@ public class JSONComparatorTest {
                 JsonNode fieldNode1 = objectNode1.get(fieldName);
                 JsonNode fieldNode2 = objectNode2.get(fieldName);
 
-                compareJsonNodes(fieldNode1, fieldNode2);
+                String fieldPath = currentPath + "/" + fieldName;
+                compareJsonNodes(fieldNode1, fieldNode2, fieldPath);
             });
+        } else if (node1.isArray() && node2.isArray()) {
+            ArrayNode arrayNode1 = (ArrayNode) node1;
+            ArrayNode arrayNode2 = (ArrayNode) node2;
+
+            if (arrayNode1.size() != arrayNode2.size()) {
+                System.out.println("Difference: Array size mismatch at path " + currentPath);
+                return;
+            }
+
+            for (int i = 0; i < arrayNode1.size(); i++) {
+                compareJsonNodes(arrayNode1.get(i), arrayNode2.get(i), currentPath + "[" + i + "]");
+            }
         } else {
-            System.out.println("Difference: " + node1 + " vs " + node2);
+            softAssert.fail("Difference at path " + currentPath + ": " + node1 + " vs " + node2);
         }
     }
+
 }
 
 
-
-
-
 In this example, we're using the Jackson library to parse and compare the JSON objects. The assertJsonEquality() method takes two JSON strings, reads them into JsonNode objects using the ObjectMapper, and then calls compareJsonNodes() to recursively compare the nodes.
-
 The compareJsonNodes() method checks if the nodes are equal. If they are not, it further checks if both nodes are objects. If they are, it iterates over the field names and recursively compares the corresponding field nodes. If the nodes are not objects, it prints the difference.
-
 Running the test will compare the JSON objects field by field and print the differences found in the console output.
-
 Make sure to include the necessary Jackson dependencies in your project's build file or dependency management tool.
+
+
+In this updated code, we've added support for asserting and comparing JSON arrays. The compareJsonNodes() method now checks if both nodes are arrays. If they are, it compares the sizes of the arrays and then recursively compares the elements at corresponding indices.
+If the sizes of the arrays differ or if any elements within the arrays are different, it prints a difference message. Otherwise, it continues with the comparison of other JSON nodes, as before.
+This allows you to assert the equality of JSON objects and arrays and print the differences between them.
+Remember to include the necessary Jackson dependencies in your project's build file or dependency management tool.
+
+
+In this updated code, the compareJsonNodes() method takes an additional parameter currentPath to keep track of the current path within the JSON structure. When a difference is found, it includes the current path along with the difference message.
+For example, if the difference is at the top level field named "age", the output will be:
+Difference at path /age: 25 vs 30
+Similarly, if the difference is within an array element at index 1, the output will be:
+Difference at path /hobbies[1]: running vs swimming
+This way, you get a more informative output that includes the specific field name and its location within the JSON
