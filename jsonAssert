@@ -101,3 +101,54 @@ public class JSONComparatorTest {
 
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+public class JSONManipulationExample {
+    public static void main(String[] args) throws Exception {
+        // The JSON string
+        String jsonString = "{ \"id\": 5, \"tags\": [{ \"id\": 1, \"name\": \"ddd\" }], \"status\": \"available\" }";
+
+        // Parse the JSON string
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(jsonString);
+
+        // Change the value of "id" within the "tags" array to 2
+        if (jsonNode instanceof ObjectNode) {
+            ObjectNode objectNode = (ObjectNode) jsonNode;
+            JsonNode tagsNode = objectNode.get("tags");
+            if (tagsNode instanceof ArrayNode) {
+                ArrayNode tagsArray = (ArrayNode) tagsNode;
+                for (JsonNode tagNode : tagsArray) {
+                    if (tagNode instanceof ObjectNode) {
+                        ObjectNode tagObject = (ObjectNode) tagNode;
+                        tagObject.put("id", 2);
+                    }
+                }
+            }
+        }
+
+        // Convert the modified JSON back to a string
+        String modifiedJsonString = objectMapper.writeValueAsString(jsonNode);
+        System.out.println(modifiedJsonString);
+    }
+}
+
+
+In this example, we parse the JSON string using the ObjectMapper class from the Jackson library. Then, we traverse the JSON structure to find the "tags" array and modify the "id" field within it.
+
+Using tagObject.put("id", 2), we change the value of the "id" field within each object in the "tags" array to 2. Finally, we convert the modified JsonNode object back to a JSON string using objectMapper.writeValueAsString(jsonNode).
