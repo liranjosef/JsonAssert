@@ -120,35 +120,96 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class JSONManipulationExample {
     public static void main(String[] args) throws Exception {
-        // The JSON string
-        String jsonString = "{ \"id\": 5, \"tags\": [{ \"id\": 1, \"name\": \"ddd\" }], \"status\": \"available\" }";
+        // The JSON string (can be either a JSON object or a JSON array)
+        String jsonString = "{\"id\": 5, \"name\": \"John\", \"tags\": [\"tag1\", \"tag2\"]}";
+
+        // Key path and new value
+        String keyPath = "name";
+        String newValue = "Doe";
 
         // Parse the JSON string
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = objectMapper.readTree(jsonString);
 
-        // Change the value of "id" within the "tags" array to 2
-        if (jsonNode instanceof ObjectNode) {
-            ObjectNode objectNode = (ObjectNode) jsonNode;
-            JsonNode tagsNode = objectNode.get("tags");
-            if (tagsNode instanceof ArrayNode) {
-                ArrayNode tagsArray = (ArrayNode) tagsNode;
-                for (JsonNode tagNode : tagsArray) {
-                    if (tagNode instanceof ObjectNode) {
-                        ObjectNode tagObject = (ObjectNode) tagNode;
-                        tagObject.put("id", 2);
-                    }
+        // Update the value at the specified key path
+        boolean success = updateValue(jsonNode, keyPath, newValue);
+
+        // Convert the modified JSON back to a string
+        if (success) {
+            String modifiedJsonString = objectMapper.writeValueAsString(jsonNode);
+            System.out.println(modifiedJsonString);
+        } else {
+            System.out.println("Failed to update the value at the specified key path.");
+        }
+    }
+
+    private static boolean updateValue(JsonNode jsonNode, String keyPath, String newValue) {
+        String[] keys = keyPath.split("\\.");
+        JsonNode currentNode = jsonNode;
+
+        for (int i = 0; i < keys.length - 1; i++) {
+            String key = keys[i];
+
+            if (currentNode.isObject()) {
+                ObjectNode objectNode = (ObjectNode) currentNode;
+
+                if (!objectNode.has(key)) {
+                    return false; // Key path does not exist
                 }
+
+                currentNode = objectNode.get(key);
+            } else if (currentNode.isArray()) {
+                ArrayNode arrayNode = (ArrayNode) currentNode;
+
+                int index = parseArrayIndex(keys[i]);
+                if (index < 0 || index >= arrayNode.size()) {
+                    return false; // Invalid array index
+                }
+
+                currentNode = arrayNode.get(index);
+            } else {
+                return false; // Key path is invalid
             }
         }
 
-        // Convert the modified JSON back to a string
-        String modifiedJsonString = objectMapper.writeValueAsString(jsonNode);
-        System.out.println(modifiedJsonString);
+        if (currentNode instanceof ObjectNode) {
+            ObjectNode objectNode = (ObjectNode) currentNode;
+            String lastKey = keys[keys.length - 1];
+
+            if (!objectNode.has(lastKey)) {
+                return false; // Key path does not exist
+            }
+
+            objectNode.put(lastKey, newValue);
+            return true;
+        } else if (currentNode instanceof ArrayNode) {
+            ArrayNode arrayNode = (ArrayNode) currentNode;
+            int index = parseArrayIndex(keys[keys.length - 1]);
+
+            if (index < 0 || index >= arrayNode.size()) {
+                return false; // Invalid array index
+            }
+
+            arrayNode.set(index, newValue);
+            return true;
+        } else {
+            return false; // Value at the specified key path is not an object or an array
+        }
+    }
+
+    private static int parseArrayIndex(String key) {
+        try {
+            return Integer.parseInt(key);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 }
 
+In this updated code, the jsonNode can be either a JSON object or a JSON array. The updateValue method is modified to handle both cases.
 
-In this example, we parse the JSON string using the ObjectMapper class from the Jackson library. Then, we traverse the JSON structure to find the "tags" array and modify the "id" field within it.
+When updating a value in a JSON object, it follows the same logic as before. If the current node is an ObjectNode, the value at the specified key path is updated using objectNode.put(lastKey, newValue).
 
-Using tagObject.put("id", 2), we change the value of the "id" field within each object in the "tags" array to 2. Finally, we convert the modified JsonNode object back to a JSON string using objectMapper.writeValueAsString(jsonNode).
+When updating a value in a JSON array, it checks if the current node is an ArrayNode. If it is, it retrieves the array index from the last key in the keys array and verifies that it is valid. If the index is valid, it updates the value at that index using arrayNode.set(index, newValue).
+
+Please note that the code assumes you have the Jackson library (ObjectMapper) imported and available in your project.
