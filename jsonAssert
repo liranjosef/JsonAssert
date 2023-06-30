@@ -213,3 +213,38 @@ When updating a value in a JSON object, it follows the same logic as before. If 
 When updating a value in a JSON array, it checks if the current node is an ArrayNode. If it is, it retrieves the array index from the last key in the keys array and verifies that it is valid. If the index is valid, it updates the value at that index using arrayNode.set(index, newValue).
 
 Please note that the code assumes you have the Jackson library (ObjectMapper) imported and available in your project.
+
+
+
+
+
+import com.google.gson.Gson;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
+import org.json.JSONException;
+import org.testng.annotations.Test;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Map;
+
+
+
+String json1 = new String(Files.readAllBytes(Paths.get("src/test/java/petStore/testsBase/json2.json")));
+
+        // Configure JsonPath to preserve the map structure
+        Configuration configuration = Configuration.defaultConfiguration().addOptions(Option.DEFAULT_PATH_LEAF_TO_NULL);
+
+        // Parse the JSON
+        Map<String, Object> document = JsonPath.using(configuration).parse(json1).read("$");
+
+        // Extract the "ddd" JSONObject using JsonPath
+        Object dddObject = JsonPath.using(configuration).parse(json1).read("$.tags");
+
+        // Convert the "ddd" JSONObject to a valid JSON string using Gson
+        Gson gson = new Gson();
+        String dddJsonString = gson.toJson(dddObject);
+
+        // Print the "ddd" JSONObject as a valid JSON string
+        System.out.println(dddJsonString);
