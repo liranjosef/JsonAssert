@@ -258,3 +258,36 @@ public static void printJsonObject(String jsonStr, String jsonPathExpression){
         printJsonObject(jsonStr, jsonPathExpression);
 
     }
+
+
+
+
+
+
+
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
+
+public class Main {
+    public static void main(String[] args) {
+        String jsonStr = "{ \"id\": 5, \"category\": { \"id\": 11, \"name\": \"dogs\", \"color\": \"blue\" }, \"name\": \"doggie\", \"photoUrls\": [ \"photooo\" ], \"tags\": [ { \"ddd\": { \"id\": null, \"name\": \"fffff\", \"color\": null }, \"ccc\": { \"id\": 11, \"name\": \"dogs\", \"color\": \"blue\" }, \"id\": 2, \"name\": \"ddds\", \"aaa\": \"ddds\" } ], \"status\": \"available\" }";
+
+        String fieldPath = "$.tags[0].ddd.name";
+        String[] newValue = {"avi", "bob"};
+
+        String updatedJsonStr = updateJsonField(jsonStr, fieldPath, newValue);
+
+        System.out.println(updatedJsonStr);
+    }
+
+    public static String updateJsonField(String jsonStr, String fieldPath, String[] newValue) {
+        try {
+            DocumentContext documentContext = JsonPath.parse(jsonStr);
+            documentContext.set(fieldPath, newValue);
+            return documentContext.jsonString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return jsonStr; // Return the original JSON string if an error occurs
+        }
+    }
+}
