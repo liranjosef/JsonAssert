@@ -219,6 +219,7 @@ Please note that the code assumes you have the Jackson library (ObjectMapper) im
 
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
@@ -227,24 +228,33 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Map;
 
 
-
-String json1 = new String(Files.readAllBytes(Paths.get("src/test/java/petStore/testsBase/json2.json")));
-
+public static void printJsonObject(String jsonStr, String jsonPathExpression){
         // Configure JsonPath to preserve the map structure
         Configuration configuration = Configuration.defaultConfiguration().addOptions(Option.DEFAULT_PATH_LEAF_TO_NULL);
 
-        // Parse the JSON
-        Map<String, Object> document = JsonPath.using(configuration).parse(json1).read("$");
+        // Extract the JSON object using JsonPath
+        Object jsonObject = JsonPath.using(configuration).parse(jsonStr).read(jsonPathExpression);
 
-        // Extract the "ddd" JSONObject using JsonPath
-        Object dddObject = JsonPath.using(configuration).parse(json1).read("$.tags");
+        // Get the name of the object from the JSONPath expression
+        String objectName = jsonPathExpression.substring(jsonPathExpression.lastIndexOf('.') + 1);
 
-        // Convert the "ddd" JSONObject to a valid JSON string using Gson
-        Gson gson = new Gson();
-        String dddJsonString = gson.toJson(dddObject);
+        // Convert the JSON object to a valid JSON string with null values preserved
+        Gson gson = new GsonBuilder().serializeNulls().setPrettyPrinting().create();
+        String jsonString = gson.toJson(jsonObject);
 
-        // Print the "ddd" JSONObject as a valid JSON string
-        System.out.println(dddJsonString);
+        // Print the name of the object and the JSON string
+        System.out.println("\"" + objectName + "\": " + jsonString);
+
+    }
+
+    @Test
+    public void CreateNewDog() throws IOException, JSONException {
+
+        String jsonStr = new String(Files.readAllBytes(Paths.get("src/test/java/petStore/testsBase/json2.json")));
+
+        String jsonPathExpression = "$.tags";
+        printJsonObject(jsonStr, jsonPathExpression);
+
+    }
